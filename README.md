@@ -17,9 +17,8 @@
 
 ## Summary
 
-p6df module for Zoom: video conferencing tooling, cask install, and MCP server
-(`@prathamesh0901/zoom-mcp-server` via npm) with profile switching
-(`ZOOM_CLIENT_ID`, `ZOOM_CLIENT_SECRET`, `ZOOM_ACCOUNT_ID`).
+Integrates Zoom into the p6df shell framework. Provides `profile::on` / `profile::off`
+for managing `ZOOM_CLIENT_ID`, client secret, and account ID, plus MCP server installation.
 
 ## Contributing
 
@@ -41,8 +40,13 @@ p6df module for Zoom: video conferencing tooling, cask install, and MCP server
 - `p6df::modules::zoom::external::brew()`
 - `p6df::modules::zoom::mcp()`
   - Synopsis: Installs Zoom MCP server
-- `p6df::modules::zoom::mcp::env()`
-  - Synopsis: Maps Zoom profile env vars to MCP-specific vars
+- `p6df::modules::zoom::profile::off()`
+- `p6df::modules::zoom::profile::on(profile, env_or_client_id, [client_secret=], [account_id=])`
+  - Args:
+    - profile
+    - env_or_client_id
+    - OPTIONAL client_secret - []
+    - OPTIONAL account_id - []
 
 ## Hierarchy
 
