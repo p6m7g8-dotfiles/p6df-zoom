@@ -1,0 +1,28 @@
+name: pull-request-lint
+
+on:
+  pull_request_target:
+    types:
+      - labeled
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+      - edited
+  merge_group: {}
+
+jobs:
+  lint:
+    name: Lint PR title
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    steps:
+      - name: Skip on merge queue
+        if: github.event_name == 'merge_group'
+        run: echo "Skipping lint in merge queue context"
+      - name: Lint PR title
+        if: github.event_name != 'merge_group'
+        uses: p6m7g8-actions/p6-gh-pr-title-linter@main
+        with:
+          gh_token: ${{ secrets.GITHUB_TOKEN }}
