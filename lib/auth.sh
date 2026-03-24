@@ -18,7 +18,8 @@ _P6DF_ZOOM_TOKEN_FILE="${HOME}/.config/p6df/zoom_tokens.json"
 p6df::modules::zoom::oauth::login() {
 
   local redirect_uri="http://localhost:4000"
-  local auth_url="https://zoom.us/oauth/authorize?response_type=code&client_id=${ZOOM_CLIENT_ID}&redirect_uri=${redirect_uri}"
+  local state="${RANDOM}${RANDOM}"
+  local auth_url="https://zoom.us/oauth/authorize?response_type=code&client_id=${ZOOM_CLIENT_ID}&redirect_uri=${redirect_uri}&state=${state}"
 
   p6_msg "Opening browser for Zoom OAuth..."
   open "$auth_url"
@@ -28,9 +29,16 @@ p6df::modules::zoom::oauth::login() {
   raw=$(echo -e "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<html><body>Auth complete. Return to terminal.</body></html>" \
     | nc -l 4000 2>/dev/null | head -1)
 
-  local code
+  local code returned_state
   code=$(printf '%s' "$raw" \
     | sed -n 's@GET /?code=\([^& ]*\).*@\1@p')
+  returned_state=$(printf '%s' "$raw" \
+    | sed -n 's@.*state=\([^& ]*\).*@\1@p')
+
+  if [[ "$returned_state" != "$state" ]]; then
+    p6_error "OAuth state mismatch"
+    p6_return_void
+  fi
 
   if [[ -z "$code" ]]; then
     p6_error "Failed to capture OAuth code"
