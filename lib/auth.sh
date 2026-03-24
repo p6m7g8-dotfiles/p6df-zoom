@@ -82,7 +82,7 @@ p6df::modules::zoom::oauth::code::exchange() {
   local creds="${ZOOM_CLIENT_ID}:${ZOOM_CLIENT_SECRET}"
 
   local response
-  response=$(p6_curl -s -X POST "$url" -u "$creds")
+  response=$(p6_network_http_post_basic_auth "$url" "$creds")
 
   p6df::modules::zoom::oauth::tokens::save "$response"
 
@@ -145,7 +145,7 @@ p6df::modules::zoom::oauth::token::refresh() {
   local creds="${ZOOM_CLIENT_ID}:${ZOOM_CLIENT_SECRET}"
 
   local response
-  response=$(p6_curl -s -X POST "$url" -u "$creds")
+  response=$(p6_network_http_post_basic_auth "$url" "$creds")
 
   p6df::modules::zoom::oauth::tokens::save "$response"
 
@@ -218,10 +218,8 @@ p6df::modules::zoom::api::call() {
   token=$(p6df::modules::zoom::oauth::token)
 
   local url="https://api.zoom.us/v2${path}"
-  local bearer="Authorization: Bearer ${token}"
-  local ctype="Content-Type: application/json"
 
-  p6_curl -s -X "${method}" "$url" -H "$bearer" -H "$ctype" "${data:+-d}" "${data:+$data}"
+  p6_network_http_call "${method}" "$url" "$token" "$data"
 
   p6_return_void
 }
