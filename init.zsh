@@ -11,6 +11,7 @@ p6df::modules::zoom::deps() {
   # shellcheck disable=2034
   ModuleDeps=(
     p6m7g8-dotfiles/p6df-darwin
+    p6m7g8-dotfiles/p6df-python
   )
 }
 
@@ -59,7 +60,7 @@ p6df::modules::zoom::external::brew() {
 ######################################################################
 p6df::modules::zoom::mcp() {
 
-  uv tool install "zoom-mcp @ git+https://github.com/echelon-ai-labs/zoom-mcp"
+  p6_python_uv_tool_install "zoom-mcp @ https://github.com/echelon-ai-labs/zoom-mcp"
 
   p6_return_void
 }
