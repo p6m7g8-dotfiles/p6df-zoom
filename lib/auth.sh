@@ -219,19 +219,17 @@ p6df::modules::zoom::api::call() {
   local token
   token=$(p6df::modules::zoom::oauth::token)
 
-  if p6_string_blank_NOT "$token"; then
-    if [[ -n "$data" ]]; then
-      curl -s -X "${method}" \
-        "https://api.zoom.us/v2${path}" \
-        -H "Authorization: Bearer ${token}" \
-        -H "Content-Type: application/json" \
-        -d "${data}"
-    else
-      curl -s -X "${method}" \
-        "https://api.zoom.us/v2${path}" \
-        -H "Authorization: Bearer ${token}" \
-        -H "Content-Type: application/json"
-    fi
+  if [[ -n "$data" ]]; then
+    curl -s -X "${method}" \
+      "https://api.zoom.us/v2${path}" \
+      -H "Authorization: Bearer ${token}" \
+      -H "Content-Type: application/json" \
+      -d "${data}"
+  else
+    curl -s -X "${method}" \
+      "https://api.zoom.us/v2${path}" \
+      -H "Authorization: Bearer ${token}" \
+      -H "Content-Type: application/json"
   fi
 
   p6_return_void
