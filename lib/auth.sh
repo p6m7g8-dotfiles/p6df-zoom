@@ -49,7 +49,7 @@ p6df::modules::zoom::oauth::login() {
     p6_return_void
   fi
 
-  p6df::modules::zoom::oauth::_exchange_code "$code" "$redirect_uri"
+  p6df::modules::zoom::oauth::exchange_code "$code" "$redirect_uri"
 
   p6_return_void
 }
@@ -57,7 +57,7 @@ p6df::modules::zoom::oauth::login() {
 ######################################################################
 #<
 #
-# Function: p6df::modules::zoom::oauth::_exchange_code(code, redirect_uri)
+# Function: p6df::modules::zoom::oauth::exchange_code(code, redirect_uri)
 #
 #/ Synopsis
 #/    Exchange authorization code for access + refresh tokens and persist.
@@ -69,7 +69,7 @@ p6df::modules::zoom::oauth::login() {
 #  Environment: ZOOM_CLIENT_ID ZOOM_CLIENT_SECRET
 #>
 ######################################################################
-p6df::modules::zoom::oauth::_exchange_code() {
+p6df::modules::zoom::oauth::exchange_code() {
   local code="${1:?requires code}"
   local redirect_uri="${2:?requires redirect_uri}"
 
@@ -78,7 +78,7 @@ p6df::modules::zoom::oauth::_exchange_code() {
     "https://zoom.us/oauth/token?grant_type=authorization_code&code=${code}&redirect_uri=${redirect_uri}" \
     -u "${ZOOM_CLIENT_ID}:${ZOOM_CLIENT_SECRET}")
 
-  p6df::modules::zoom::oauth::_save_tokens "$response"
+  p6df::modules::zoom::oauth::save_tokens "$response"
 
   p6_return_void
 }
@@ -86,7 +86,7 @@ p6df::modules::zoom::oauth::_exchange_code() {
 ######################################################################
 #<
 #
-# Function: p6df::modules::zoom::oauth::_save_tokens(response)
+# Function: p6df::modules::zoom::oauth::save_tokens(response)
 #
 #/ Synopsis
 #/    Persist access_token, refresh_token, and expiry to disk.
@@ -95,7 +95,7 @@ p6df::modules::zoom::oauth::_exchange_code() {
 #	response - JSON response from token endpoint
 #>
 ######################################################################
-p6df::modules::zoom::oauth::_save_tokens() {
+p6df::modules::zoom::oauth::save_tokens() {
   local response="${1:?requires response}"
 
   if ! printf '%s' "$response" | jq -e '.access_token? // empty' >/dev/null; then
@@ -117,7 +117,7 @@ p6df::modules::zoom::oauth::_save_tokens() {
 ######################################################################
 #<
 #
-# Function: p6df::modules::zoom::oauth::_refresh()
+# Function: p6df::modules::zoom::oauth::refresh()
 #
 #/ Synopsis
 #/    Use stored refresh_token to obtain a new access token and persist.
@@ -125,7 +125,7 @@ p6df::modules::zoom::oauth::_save_tokens() {
 #  Environment: ZOOM_CLIENT_ID ZOOM_CLIENT_SECRET
 #>
 ######################################################################
-p6df::modules::zoom::oauth::_refresh() {
+p6df::modules::zoom::oauth::refresh() {
 
   local refresh_token
   refresh_token=$(jq -r '.refresh_token' "$_P6DF_ZOOM_TOKEN_FILE")
@@ -135,7 +135,7 @@ p6df::modules::zoom::oauth::_refresh() {
     "https://zoom.us/oauth/token?grant_type=refresh_token&refresh_token=${refresh_token}" \
     -u "${ZOOM_CLIENT_ID}:${ZOOM_CLIENT_SECRET}")
 
-  p6df::modules::zoom::oauth::_save_tokens "$response"
+  p6df::modules::zoom::oauth::save_tokens "$response"
 
   p6_return_void
 }
@@ -165,7 +165,7 @@ p6df::modules::zoom::oauth::token() {
 
   # Refresh 60s before expiry
   if (( now >= expires_at - 60 )); then
-    p6df::modules::zoom::oauth::_refresh
+    p6df::modules::zoom::oauth::refresh
     expires_at=$(jq -r '.expires_at // 0' "$_P6DF_ZOOM_TOKEN_FILE")
     if (( now >= expires_at )); then
       p6_error "Zoom token refresh failed; rerun login"
