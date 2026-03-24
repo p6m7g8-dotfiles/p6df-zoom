@@ -220,13 +220,14 @@ p6df::modules::zoom::api::call() {
   token=$(p6df::modules::zoom::oauth::token)
 
   local url="https://api.zoom.us/v2${path}"
+  local bearer="Authorization: Bearer ${token}"
+  local ctype="Content-Type: application/json"
 
-  set -- -s -X "${method}" "$url" -H "Authorization: Bearer ${token}" -H "Content-Type: application/json"
   if [ -n "$data" ]; then
-    set -- "$@" -d "${data}"
+    curl -s -X "${method}" "$url" -H "$bearer" -H "$ctype" -d "$data"
+  else
+    curl -s -X "${method}" "$url" -H "$bearer" -H "$ctype"
   fi
-
-  curl "$@"
 
   p6_return_void
 }
