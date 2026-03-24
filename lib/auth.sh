@@ -154,6 +154,11 @@ p6df::modules::zoom::oauth::token() {
   # Refresh 60s before expiry
   if (( now >= expires_at - 60 )); then
     p6df::modules::zoom::oauth::_refresh
+    expires_at=$(jq -r '.expires_at // 0' "$_P6DF_ZOOM_TOKEN_FILE")
+    if (( now >= expires_at )); then
+      p6_error "Zoom token refresh failed; rerun login"
+      p6_return_str ""
+    fi
   fi
 
   local token
