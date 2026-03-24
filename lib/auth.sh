@@ -223,10 +223,7 @@ p6df::modules::zoom::api::call() {
   local bearer="Authorization: Bearer ${token}"
   local ctype="Content-Type: application/json"
 
-  local -a args=(-s -X "${method}" "$url" -H "$bearer" -H "$ctype")
-  p6_string_blank_NOT "$data" && args+=(-d "$data")
-
-  curl "${args[@]}"
+  curl -s -X "${method}" "$url" -H "$bearer" -H "$ctype" "${data:+-d}" "${data:+$data}"
 
   p6_return_void
 }
