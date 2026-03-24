@@ -44,9 +44,9 @@ p6df::modules::zoom::oauth::login() {
 
   local code returned_state
   code=$(printf '%s' "$raw" \
-    | sed -n 's@GET /?code=\([^& ]*\).*@\1@p')
+    | p6_filter_extract_query_param "code")
   returned_state=$(printf '%s' "$raw" \
-    | sed -n 's@.*state=\([^& ]*\).*@\1@p')
+    | p6_filter_extract_query_param "state")
 
   if [[ "$returned_state" != "$state" ]]; then
     p6_error "OAuth state mismatch"
