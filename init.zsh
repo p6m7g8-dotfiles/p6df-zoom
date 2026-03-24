@@ -17,6 +17,25 @@ p6df::modules::zoom::deps() {
 ######################################################################
 #<
 #
+# Function: p6df::modules::zoom::init(module, dir)
+#
+#  Args:
+#	module -
+#	dir -
+#>
+######################################################################
+p6df::modules::zoom::init() {
+  local _module="$1"
+  local dir="$2"
+
+  p6_bootstrap "$dir"
+
+  p6_return_void
+}
+
+######################################################################
+#<
+#
 # Function: p6df::modules::zoom::external::brew()
 #
 #>
@@ -33,14 +52,14 @@ p6df::modules::zoom::external::brew() {
 #
 # Function: p6df::modules::zoom::mcp()
 #
-#>
 #/ Synopsis
-#/    Installs Zoom MCP server
+#/    Installs echelon-ai-labs/zoom-mcp (Python) MCP server
 #/
+#>
 ######################################################################
 p6df::modules::zoom::mcp() {
 
-  p6_js_npm_global_install "@prathamesh0901/zoom-mcp-server"
+  uv tool install "zoom-mcp @ git+https://github.com/echelon-ai-labs/zoom-mcp"
 
   p6_return_void
 }
@@ -48,22 +67,20 @@ p6df::modules::zoom::mcp() {
 ######################################################################
 #<
 #
-# Function: p6df::modules::zoom::profile::on(profile, env_or_client_id, [client_secret=], [account_id=])
+# Function: p6df::modules::zoom::profile::on(profile, env_or_client_id, [client_secret=])
 #
 #  Args:
 #	profile -
 #	env_or_client_id -
 #	OPTIONAL client_secret - []
-#	OPTIONAL account_id - []
 #
-#  Environment:	 P6_DFZ_PROFILE_ZOOM ZOOM_ACCOUNT_ID ZOOM_CLIENT_ID ZOOM_CLIENT_SECRET
+#  Environment:	 P6_DFZ_PROFILE_ZOOM ZOOM_CLIENT_ID ZOOM_CLIENT_SECRET
 #>
 ######################################################################
 p6df::modules::zoom::profile::on() {
   local profile="$1"
   local env_or_client_id="$2"
   local client_secret="${3:-}"
-  local account_id="${4:-}"
 
   local client_id="$env_or_client_id"
 
@@ -71,13 +88,11 @@ p6df::modules::zoom::profile::on() {
     p6_run_code "$env_or_client_id"
     client_id="${ZOOM_CLIENT_ID:-}"
     client_secret="${ZOOM_CLIENT_SECRET:-$client_secret}"
-    account_id="${ZOOM_ACCOUNT_ID:-$account_id}"
   fi
 
   p6_env_export "P6_DFZ_PROFILE_ZOOM"  "$profile"
   p6_env_export "ZOOM_CLIENT_ID"       "$client_id"
   p6_env_export "ZOOM_CLIENT_SECRET"   "$client_secret"
-  p6_env_export "ZOOM_ACCOUNT_ID"      "$account_id"
 
   p6_return_void
 }
@@ -87,7 +102,7 @@ p6df::modules::zoom::profile::on() {
 #
 # Function: p6df::modules::zoom::profile::off()
 #
-#  Environment:	 P6_DFZ_PROFILE_ZOOM ZOOM_ACCOUNT_ID ZOOM_CLIENT_ID ZOOM_CLIENT_SECRET
+#  Environment:	 P6_DFZ_PROFILE_ZOOM ZOOM_CLIENT_ID ZOOM_CLIENT_SECRET
 #>
 ######################################################################
 p6df::modules::zoom::profile::off() {
@@ -95,7 +110,43 @@ p6df::modules::zoom::profile::off() {
   p6_env_export_un P6_DFZ_PROFILE_ZOOM
   p6_env_export_un ZOOM_CLIENT_ID
   p6_env_export_un ZOOM_CLIENT_SECRET
-  p6_env_export_un ZOOM_ACCOUNT_ID
 
   p6_return_void
+}
+
+######################################################################
+#<
+#
+# Function: str str = p6df::modules::zoom::prompt::mod()
+#
+#  Returns:
+#	str - str
+#
+#  Environment:	 P6_DFZ_PROFILE_ZOOM
+#>
+######################################################################
+p6df::modules::zoom::prompt::mod() {
+  local str
+
+  if p6_string_blank_NOT "$P6_DFZ_PROFILE_ZOOM"; then
+    str="zoom:\t\t  $P6_DFZ_PROFILE_ZOOM:"
+
+    local token_file="${HOME}/.config/p6df/zoom_tokens.json"
+    if [[ ! -f "$token_file" ]]; then
+      str=$(p6_string_append "$str" "not authed" " ")
+    else
+      local expires_at now
+      expires_at=$(jq -r '.expires_at // 0' "$token_file")
+      now=$(date +%s)
+      if (( now >= expires_at )); then
+        str=$(p6_string_append "$str" "expired" " ")
+      else
+        local remaining=$(( expires_at - now ))
+        str=$(p6_string_append "$str" "ok" " ")
+        str=$(p6_string_append "$str" "exp:$(( remaining / 60 ))m" " ")
+      fi
+    fi
+  fi
+
+  p6_return_str "$str"
 }
