@@ -35,11 +35,7 @@ p6df::modules::zoom::oauth::login() {
   local auth_url="https://zoom.us/oauth/authorize?response_type=code&client_id=${ZOOM_CLIENT_ID}&redirect_uri=${redirect_uri}&state=${state}"
 
   p6_msg "Opening browser for Zoom OAuth..."
-  if command -v open >/dev/null 2>&1; then
-    open "$auth_url"
-  else
-    xdg-open "$auth_url"
-  fi
+  p6df::modules::darwin::url::open "$auth_url"
 
   p6_msg "Waiting for redirect on ${redirect_uri} ..."
   local raw
