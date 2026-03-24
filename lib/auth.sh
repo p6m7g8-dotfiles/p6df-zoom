@@ -78,10 +78,11 @@ p6df::modules::zoom::oauth::code::exchange() {
   local code="$1"         # authorization code from redirect
   local redirect_uri="$2" # must match app configuration
 
+  local url="https://zoom.us/oauth/token?grant_type=authorization_code&code=${code}&redirect_uri=${redirect_uri}"
+  local creds="${ZOOM_CLIENT_ID}:${ZOOM_CLIENT_SECRET}"
+
   local response
-  response=$(curl -s -X POST \
-    "https://zoom.us/oauth/token?grant_type=authorization_code&code=${code}&redirect_uri=${redirect_uri}" \
-    -u "${ZOOM_CLIENT_ID}:${ZOOM_CLIENT_SECRET}")
+  response=$(p6_network_http_post_basic_auth "$url" "$creds")
 
   p6df::modules::zoom::oauth::tokens::save "$response"
 
@@ -140,10 +141,11 @@ p6df::modules::zoom::oauth::token::refresh() {
   local refresh_token
   refresh_token=$(jq -r '.refresh_token' "$token_file")
 
+  local url="https://zoom.us/oauth/token?grant_type=refresh_token&refresh_token=${refresh_token}"
+  local creds="${ZOOM_CLIENT_ID}:${ZOOM_CLIENT_SECRET}"
+
   local response
-  response=$(curl -s -X POST \
-    "https://zoom.us/oauth/token?grant_type=refresh_token&refresh_token=${refresh_token}" \
-    -u "${ZOOM_CLIENT_ID}:${ZOOM_CLIENT_SECRET}")
+  response=$(p6_network_http_post_basic_auth "$url" "$creds")
 
   p6df::modules::zoom::oauth::tokens::save "$response"
 
@@ -216,10 +218,8 @@ p6df::modules::zoom::api::call() {
   token=$(p6df::modules::zoom::oauth::token)
 
   local url="https://api.zoom.us/v2${path}"
-  local bearer="Authorization: Bearer ${token}"
-  local ctype="Content-Type: application/json"
 
-  curl -s -X "${method}" "$url" -H "$bearer" -H "$ctype" "${data:+-d}" "${data:+$data}"
+  p6_network_http_call "${method}" "$url" "$token" "$data"
 
   p6_return_void
 }
