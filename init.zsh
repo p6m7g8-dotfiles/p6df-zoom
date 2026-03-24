@@ -139,7 +139,7 @@ p6df::modules::zoom::prompt::mod() {
     else
       local expires_at now
       expires_at=$(jq -r '.expires_at // 0' "$token_file")
-      now=$(date +%s)
+      now=$EPOCHSECONDS
       if (( now >= expires_at )); then
         str=$(p6_string_append "$str" "expired" " ")
       else
