@@ -218,8 +218,10 @@ p6df::modules::zoom::api::call() {
   token=$(p6df::modules::zoom::oauth::token)
 
   local url="https://api.zoom.us/v2${path}"
+  local bearer="Authorization: Bearer ${token}"
+  local ctype="Content-Type: application/json"
 
-  p6_network_http_call "${method}" "$url" "$token" "$data"
+  p6_network_http_call "${method}" "$url" "$data" -H "$bearer" -H "$ctype"
 
   p6_return_void
 }
