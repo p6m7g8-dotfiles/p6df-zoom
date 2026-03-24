@@ -29,7 +29,8 @@ p6df::modules::zoom::oauth::login() {
     | nc -l 4000 2>/dev/null | head -1)
 
   local code
-  code=$(printf '%s' "$raw" | sed 's/GET \/\?code=//;s/ .*//')
+  code=$(printf '%s' "$raw" \
+    | sed -n 's@GET /?code=\([^& ]*\).*@\1@p')
 
   if [[ -z "$code" ]]; then
     p6_error "Failed to capture OAuth code"
@@ -84,6 +85,11 @@ p6df::modules::zoom::oauth::_exchange_code() {
 ######################################################################
 p6df::modules::zoom::oauth::_save_tokens() {
   local response="${1:?requires response}"
+
+  if ! printf '%s' "$response" | jq -e '.access_token? // empty' >/dev/null; then
+    p6_error "Zoom token response missing access_token"
+    p6_return_void
+  fi
 
   local expires_at
   expires_at=$(( $(date +%s) + $(printf '%s' "$response" | jq -r '.expires_in // 3600') ))
