@@ -3,13 +3,13 @@
 ######################################################################
 #<
 #
-# Function: str path = p6df::modules::zoom::oauth::token_file()
+# Function: str path = p6df::modules::zoom::oauth::token::file()
 #
 #  Returns:
 #	str - path
 #>
 ######################################################################
-p6df::modules::zoom::oauth::token_file() {
+p6df::modules::zoom::oauth::token::file() {
 
   local path="${HOME}/.config/p6df/zoom_tokens.json"
 
@@ -62,7 +62,7 @@ p6df::modules::zoom::oauth::login() {
     p6_return_void
   fi
 
-  p6df::modules::zoom::oauth::exchange_code "$code" "$redirect_uri"
+  p6df::modules::zoom::oauth::code::exchange "$code" "$redirect_uri"
 
   p6_return_void
 }
@@ -70,7 +70,7 @@ p6df::modules::zoom::oauth::login() {
 ######################################################################
 #<
 #
-# Function: p6df::modules::zoom::oauth::exchange_code(code, redirect_uri)
+# Function: p6df::modules::zoom::oauth::code::exchange(code, redirect_uri)
 #
 #/ Synopsis
 #/    Exchange authorization code for access + refresh tokens and persist.
@@ -82,7 +82,7 @@ p6df::modules::zoom::oauth::login() {
 #  Environment: ZOOM_CLIENT_ID ZOOM_CLIENT_SECRET
 #>
 ######################################################################
-p6df::modules::zoom::oauth::exchange_code() {
+p6df::modules::zoom::oauth::code::exchange() {
   local code="${1:?requires code}"
   local redirect_uri="${2:?requires redirect_uri}"
 
@@ -91,7 +91,7 @@ p6df::modules::zoom::oauth::exchange_code() {
     "https://zoom.us/oauth/token?grant_type=authorization_code&code=${code}&redirect_uri=${redirect_uri}" \
     -u "${ZOOM_CLIENT_ID}:${ZOOM_CLIENT_SECRET}")
 
-  p6df::modules::zoom::oauth::save_tokens "$response"
+  p6df::modules::zoom::oauth::tokens::save "$response"
 
   p6_return_void
 }
@@ -99,7 +99,7 @@ p6df::modules::zoom::oauth::exchange_code() {
 ######################################################################
 #<
 #
-# Function: p6df::modules::zoom::oauth::save_tokens(response)
+# Function: p6df::modules::zoom::oauth::tokens::save(response)
 #
 #/ Synopsis
 #/    Persist access_token, refresh_token, and expiry to disk.
@@ -108,11 +108,11 @@ p6df::modules::zoom::oauth::exchange_code() {
 #	response - JSON response from token endpoint
 #>
 ######################################################################
-p6df::modules::zoom::oauth::save_tokens() {
+p6df::modules::zoom::oauth::tokens::save() {
   local response="${1:?requires response}"
 
   local token_file
-  token_file=$(p6df::modules::zoom::oauth::token_file)
+  token_file=$(p6df::modules::zoom::oauth::token::file)
 
   if ! printf '%s' "$response" | jq -e '.access_token? // empty' >/dev/null; then
     p6_error "Zoom token response missing access_token"
@@ -133,7 +133,7 @@ p6df::modules::zoom::oauth::save_tokens() {
 ######################################################################
 #<
 #
-# Function: p6df::modules::zoom::oauth::refresh()
+# Function: p6df::modules::zoom::oauth::token::refresh()
 #
 #/ Synopsis
 #/    Use stored refresh_token to obtain a new access token and persist.
@@ -141,10 +141,10 @@ p6df::modules::zoom::oauth::save_tokens() {
 #  Environment: ZOOM_CLIENT_ID ZOOM_CLIENT_SECRET
 #>
 ######################################################################
-p6df::modules::zoom::oauth::refresh() {
+p6df::modules::zoom::oauth::token::refresh() {
 
   local token_file
-  token_file=$(p6df::modules::zoom::oauth::token_file)
+  token_file=$(p6df::modules::zoom::oauth::token::file)
 
   local refresh_token
   refresh_token=$(jq -r '.refresh_token' "$token_file")
@@ -154,7 +154,7 @@ p6df::modules::zoom::oauth::refresh() {
     "https://zoom.us/oauth/token?grant_type=refresh_token&refresh_token=${refresh_token}" \
     -u "${ZOOM_CLIENT_ID}:${ZOOM_CLIENT_SECRET}")
 
-  p6df::modules::zoom::oauth::save_tokens "$response"
+  p6df::modules::zoom::oauth::tokens::save "$response"
 
   p6_return_void
 }
@@ -174,7 +174,7 @@ p6df::modules::zoom::oauth::refresh() {
 p6df::modules::zoom::oauth::token() {
 
   local token_file
-  token_file=$(p6df::modules::zoom::oauth::token_file)
+  token_file=$(p6df::modules::zoom::oauth::token::file)
 
   if [[ ! -f "$token_file" ]]; then
     p6_error "No Zoom tokens found. Run: p6df::modules::zoom::oauth::login"
@@ -187,7 +187,7 @@ p6df::modules::zoom::oauth::token() {
 
   # Refresh 60s before expiry
   if (( now >= expires_at - 60 )); then
-    p6df::modules::zoom::oauth::refresh
+    p6df::modules::zoom::oauth::token::refresh
     expires_at=$(jq -r '.expires_at // 0' "$token_file")
     if (( now >= expires_at )); then
       p6_error "Zoom token refresh failed; rerun login"

@@ -132,7 +132,7 @@ p6df::modules::zoom::prompt::mod() {
     str="zoom:\t\t  $P6_DFZ_PROFILE_ZOOM:"
 
     local token_file
-    token_file=$(p6df::modules::zoom::oauth::token_file)
+    token_file=$(p6df::modules::zoom::oauth::token::file)
     if [[ ! -f "$token_file" ]]; then
       str=$(p6_string_append "$str" "not authed" " ")
     else
