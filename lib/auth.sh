@@ -83,8 +83,8 @@ p6df::modules::zoom::oauth::login() {
 #>
 ######################################################################
 p6df::modules::zoom::oauth::code::exchange() {
-  local code="${1:?requires code}"
-  local redirect_uri="${2:?requires redirect_uri}"
+  local code="$1"         # authorization code from redirect
+  local redirect_uri="$2" # must match app configuration
 
   local response
   response=$(curl -s -X POST \
@@ -109,7 +109,7 @@ p6df::modules::zoom::oauth::code::exchange() {
 #>
 ######################################################################
 p6df::modules::zoom::oauth::tokens::save() {
-  local response="${1:?requires response}"
+  local response="$1" # JSON response from token endpoint
 
   local token_file
   token_file=$(p6df::modules::zoom::oauth::token::file)
@@ -218,8 +218,8 @@ p6df::modules::zoom::oauth::token() {
 #>
 ######################################################################
 p6df::modules::zoom::api::call() {
-  local method="${1:?requires method}"
-  local path="${2:?requires path}"
+  local method="$1" # HTTP method (GET POST PATCH PUT DELETE)
+  local path="$2"   # API path e.g. /users/me/meetings
   local data="${3:-}"
 
   local token
