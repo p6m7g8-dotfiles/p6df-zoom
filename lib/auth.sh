@@ -114,6 +114,7 @@ p6df::modules::zoom::oauth::tokens::save() {
     expires_at=$(( EPOCHSECONDS + $(p6_echo "$response" | p6_json_eval -r '.expires_in // 3600') ))
 
     mkdir -p "$(dirname "$token_file")"
+    # shellcheck disable=SC2016  # $exp is a jq variable, not a shell variable
     p6_echo "$response" | p6_json_eval --argjson exp "$expires_at" '. + {expires_at: $exp}' \
       > "$token_file"
     p6_file_chmod "600" "$token_file"
