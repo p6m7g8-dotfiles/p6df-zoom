@@ -54,15 +54,11 @@ p6df::modules::zoom::oauth::login() {
 
   if [[ "$returned_state" != "$state" ]]; then
     p6_error "OAuth state mismatch"
-    p6_return_void
-  fi
-
-  if [[ -z "$code" ]]; then
+  elif [[ -z "$code" ]]; then
     p6_error "Failed to capture OAuth code"
-    p6_return_void
+  else
+    p6df::modules::zoom::oauth::code::exchange "$code" "$redirect_uri"
   fi
-
-  p6df::modules::zoom::oauth::code::exchange "$code" "$redirect_uri"
 
   p6_return_void
 }
@@ -116,16 +112,15 @@ p6df::modules::zoom::oauth::tokens::save() {
 
   if ! printf '%s' "$response" | jq -e '.access_token? // empty' >/dev/null; then
     p6_error "Zoom token response missing access_token"
-    p6_return_void
+  else
+    local expires_at
+    expires_at=$(( $(date +%s) + $(printf '%s' "$response" | jq -r '.expires_in // 3600') ))
+
+    mkdir -p "$(dirname "$token_file")"
+    printf '%s' "$response" | jq --argjson exp "$expires_at" '. + {expires_at: $exp}' \
+      > "$token_file"
+    chmod 600 "$token_file"
   fi
-
-  local expires_at
-  expires_at=$(( $(date +%s) + $(printf '%s' "$response" | jq -r '.expires_in // 3600') ))
-
-  mkdir -p "$(dirname "$token_file")"
-  printf '%s' "$response" | jq --argjson exp "$expires_at" '. + {expires_at: $exp}' \
-    > "$token_file"
-  chmod 600 "$token_file"
 
   p6_return_void
 }
@@ -176,29 +171,28 @@ p6df::modules::zoom::oauth::token() {
   local token_file
   token_file=$(p6df::modules::zoom::oauth::token::file)
 
+  local token=""
+
   if [[ ! -f "$token_file" ]]; then
     p6_error "No Zoom tokens found. Run: p6df::modules::zoom::oauth::login"
-    p6_return_str ""
-  fi
-
-  local expires_at now
-  expires_at=$(jq -r '.expires_at // 0' "$token_file")
-  now=$(date +%s)
-
-  # Refresh 60s before expiry
-  if (( now >= expires_at - 60 )); then
-    p6df::modules::zoom::oauth::token::refresh
+  else
+    local expires_at now
     expires_at=$(jq -r '.expires_at // 0' "$token_file")
-    if (( now >= expires_at )); then
+    now=$(date +%s)
+
+    if (( now >= expires_at - 60 )); then
+      p6df::modules::zoom::oauth::token::refresh
+      expires_at=$(jq -r '.expires_at // 0' "$token_file")
+    fi
+
+    if (( now < expires_at )); then
+      token=$(jq -r '.access_token' "$token_file")
+    else
       p6_error "Zoom token refresh failed; rerun login"
-      p6_return_str ""
     fi
   fi
 
-  local token
-  token=$(jq -r '.access_token' "$token_file")
-
-  p6_return_str "${token}"
+  p6_return_str "$token"
 }
 
 ######################################################################
@@ -225,21 +219,19 @@ p6df::modules::zoom::api::call() {
   local token
   token=$(p6df::modules::zoom::oauth::token)
 
-  if [[ -z "$token" ]]; then
-    p6_return_void
-  fi
-
-  if [[ -n "$data" ]]; then
-    curl -s -X "${method}" \
-      "https://api.zoom.us/v2${path}" \
-      -H "Authorization: Bearer ${token}" \
-      -H "Content-Type: application/json" \
-      -d "${data}"
-  else
-    curl -s -X "${method}" \
-      "https://api.zoom.us/v2${path}" \
-      -H "Authorization: Bearer ${token}" \
-      -H "Content-Type: application/json"
+  if p6_string_blank_NOT "$token"; then
+    if [[ -n "$data" ]]; then
+      curl -s -X "${method}" \
+        "https://api.zoom.us/v2${path}" \
+        -H "Authorization: Bearer ${token}" \
+        -H "Content-Type: application/json" \
+        -d "${data}"
+    else
+      curl -s -X "${method}" \
+        "https://api.zoom.us/v2${path}" \
+        -H "Authorization: Bearer ${token}" \
+        -H "Content-Type: application/json"
+    fi
   fi
 
   p6_return_void
