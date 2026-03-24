@@ -111,7 +111,7 @@ p6df::modules::zoom::oauth::tokens::save() {
     p6_error "Zoom token response missing access_token"
   else
     local expires_at
-    expires_at=$(( $(date +%s) + $(printf '%s' "$response" | jq -r '.expires_in // 3600') ))
+    expires_at=$(( EPOCHSECONDS + $(printf '%s' "$response" | jq -r '.expires_in // 3600') ))
 
     mkdir -p "$(dirname "$token_file")"
     printf '%s' "$response" | jq --argjson exp "$expires_at" '. + {expires_at: $exp}' \
@@ -176,7 +176,7 @@ p6df::modules::zoom::oauth::token() {
   else
     local expires_at now
     expires_at=$(jq -r '.expires_at // 0' "$token_file")
-    now=$(date +%s)
+    now=$EPOCHSECONDS
 
     if (( now >= expires_at - 60 )); then
       p6df::modules::zoom::oauth::token::refresh
