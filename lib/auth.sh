@@ -107,14 +107,14 @@ p6df::modules::zoom::oauth::tokens::save() {
   local token_file
   token_file=$(p6df::modules::zoom::oauth::token::file)
 
-  if ! printf '%s' "$response" | jq -e '.access_token? // empty' >/dev/null; then
+  if ! p6_echo "$response" | p6_json_eval -e '.access_token? // empty' >/dev/null; then
     p6_error "Zoom token response missing access_token"
   else
     local expires_at
-    expires_at=$(( EPOCHSECONDS + $(printf '%s' "$response" | jq -r '.expires_in // 3600') ))
+    expires_at=$(( EPOCHSECONDS + $(p6_echo "$response" | p6_json_eval -r '.expires_in // 3600') ))
 
     mkdir -p "$(dirname "$token_file")"
-    printf '%s' "$response" | jq --argjson exp "$expires_at" '. + {expires_at: $exp}' \
+    p6_echo "$response" | p6_json_eval --argjson exp "$expires_at" '. + {expires_at: $exp}' \
       > "$token_file"
     p6_file_chmod "600" "$token_file"
   fi
@@ -139,7 +139,7 @@ p6df::modules::zoom::oauth::token::refresh() {
   token_file=$(p6df::modules::zoom::oauth::token::file)
 
   local refresh_token
-  refresh_token=$(jq -r '.refresh_token' "$token_file")
+  refresh_token=$(p6_json_from_file "$token_file" | p6_json_eval -r '.refresh_token')
 
   local url="https://zoom.us/oauth/token?grant_type=refresh_token&refresh_token=${refresh_token}"
   local creds="${ZOOM_CLIENT_ID}:${ZOOM_CLIENT_SECRET}"
@@ -175,16 +175,16 @@ p6df::modules::zoom::oauth::token() {
     p6_error "No Zoom tokens found. Run: p6df::modules::zoom::oauth::login"
   else
     local expires_at now
-    expires_at=$(jq -r '.expires_at // 0' "$token_file")
+    expires_at=$(p6_json_from_file "$token_file" | p6_json_eval -r '.expires_at // 0')
     now=$EPOCHSECONDS
 
     if (( now >= expires_at - 60 )); then
       p6df::modules::zoom::oauth::token::refresh
-      expires_at=$(jq -r '.expires_at // 0' "$token_file")
+      expires_at=$(p6_json_from_file "$token_file" | p6_json_eval -r '.expires_at // 0')
     fi
 
     if (( now < expires_at )); then
-      token=$(jq -r '.access_token' "$token_file")
+      token=$(p6_json_from_file "$token_file" | p6_json_eval -r '.access_token')
     else
       p6_error "Zoom token refresh failed; rerun login"
     fi

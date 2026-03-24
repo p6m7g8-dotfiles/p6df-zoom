@@ -138,7 +138,7 @@ p6df::modules::zoom::prompt::mod() {
       str=$(p6_string_append "$str" "not authed" " ")
     else
       local expires_at now
-      expires_at=$(jq -r '.expires_at // 0' "$token_file")
+      expires_at=$(p6_json_from_file "$token_file" | p6_json_eval -r '.expires_at // 0')
       now=$EPOCHSECONDS
       if (( now >= expires_at )); then
         str=$(p6_string_append "$str" "expired" " ")
