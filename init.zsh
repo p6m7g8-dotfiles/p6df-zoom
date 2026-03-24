@@ -131,7 +131,8 @@ p6df::modules::zoom::prompt::mod() {
   if p6_string_blank_NOT "$P6_DFZ_PROFILE_ZOOM"; then
     str="zoom:\t\t  $P6_DFZ_PROFILE_ZOOM:"
 
-    local token_file="${HOME}/.config/p6df/zoom_tokens.json"
+    local token_file
+    token_file=$(p6df::modules::zoom::oauth::token_file)
     if [[ ! -f "$token_file" ]]; then
       str=$(p6_string_append "$str" "not authed" " ")
     else

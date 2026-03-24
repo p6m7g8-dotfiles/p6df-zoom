@@ -1,7 +1,20 @@
 # shellcheck shell=bash
 
-# Token cache file
-_P6DF_ZOOM_TOKEN_FILE="${HOME}/.config/p6df/zoom_tokens.json"
+######################################################################
+#<
+#
+# Function: str path = p6df::modules::zoom::oauth::token_file()
+#
+#  Returns:
+#	str - path
+#>
+######################################################################
+p6df::modules::zoom::oauth::token_file() {
+
+  local path="${HOME}/.config/p6df/zoom_tokens.json"
+
+  p6_return_str "$path"
+}
 
 ######################################################################
 #<
@@ -98,6 +111,9 @@ p6df::modules::zoom::oauth::exchange_code() {
 p6df::modules::zoom::oauth::save_tokens() {
   local response="${1:?requires response}"
 
+  local token_file
+  token_file=$(p6df::modules::zoom::oauth::token_file)
+
   if ! printf '%s' "$response" | jq -e '.access_token? // empty' >/dev/null; then
     p6_error "Zoom token response missing access_token"
     p6_return_void
@@ -106,10 +122,10 @@ p6df::modules::zoom::oauth::save_tokens() {
   local expires_at
   expires_at=$(( $(date +%s) + $(printf '%s' "$response" | jq -r '.expires_in // 3600') ))
 
-  mkdir -p "$(dirname "$_P6DF_ZOOM_TOKEN_FILE")"
+  mkdir -p "$(dirname "$token_file")"
   printf '%s' "$response" | jq --argjson exp "$expires_at" '. + {expires_at: $exp}' \
-    > "$_P6DF_ZOOM_TOKEN_FILE"
-  chmod 600 "$_P6DF_ZOOM_TOKEN_FILE"
+    > "$token_file"
+  chmod 600 "$token_file"
 
   p6_return_void
 }
@@ -127,8 +143,11 @@ p6df::modules::zoom::oauth::save_tokens() {
 ######################################################################
 p6df::modules::zoom::oauth::refresh() {
 
+  local token_file
+  token_file=$(p6df::modules::zoom::oauth::token_file)
+
   local refresh_token
-  refresh_token=$(jq -r '.refresh_token' "$_P6DF_ZOOM_TOKEN_FILE")
+  refresh_token=$(jq -r '.refresh_token' "$token_file")
 
   local response
   response=$(curl -s -X POST \
@@ -154,19 +173,22 @@ p6df::modules::zoom::oauth::refresh() {
 ######################################################################
 p6df::modules::zoom::oauth::token() {
 
-  if [[ ! -f "$_P6DF_ZOOM_TOKEN_FILE" ]]; then
+  local token_file
+  token_file=$(p6df::modules::zoom::oauth::token_file)
+
+  if [[ ! -f "$token_file" ]]; then
     p6_error "No Zoom tokens found. Run: p6df::modules::zoom::oauth::login"
     p6_return_str ""
   fi
 
   local expires_at now
-  expires_at=$(jq -r '.expires_at // 0' "$_P6DF_ZOOM_TOKEN_FILE")
+  expires_at=$(jq -r '.expires_at // 0' "$token_file")
   now=$(date +%s)
 
   # Refresh 60s before expiry
   if (( now >= expires_at - 60 )); then
     p6df::modules::zoom::oauth::refresh
-    expires_at=$(jq -r '.expires_at // 0' "$_P6DF_ZOOM_TOKEN_FILE")
+    expires_at=$(jq -r '.expires_at // 0' "$token_file")
     if (( now >= expires_at )); then
       p6_error "Zoom token refresh failed; rerun login"
       p6_return_str ""
@@ -174,7 +196,7 @@ p6df::modules::zoom::oauth::token() {
   fi
 
   local token
-  token=$(jq -r '.access_token' "$_P6DF_ZOOM_TOKEN_FILE")
+  token=$(jq -r '.access_token' "$token_file")
 
   p6_return_str "${token}"
 }
