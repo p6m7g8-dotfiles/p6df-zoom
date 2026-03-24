@@ -116,7 +116,7 @@ p6df::modules::zoom::oauth::tokens::save() {
     mkdir -p "$(dirname "$token_file")"
     printf '%s' "$response" | jq --argjson exp "$expires_at" '. + {expires_at: $exp}' \
       > "$token_file"
-    chmod 600 "$token_file"
+    p6_file_chmod "600" "$token_file"
   fi
 
   p6_return_void
