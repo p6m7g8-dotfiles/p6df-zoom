@@ -86,7 +86,9 @@ p6df::modules::zoom::profile::on() {
 
   p6_run_code "$code"
 
-  p6_env_export "P6_DFZ_PROFILE_ZOOM" "$profile"
+  p6_env_export "P6_DFZ_PROFILE_ZOOM"  "$profile"
+  p6_env_export "ZOOM_CLIENT_ID"       "${ZOOM_CLIENT_ID:-}"
+  p6_env_export "ZOOM_CLIENT_SECRET"   "${ZOOM_CLIENT_SECRET:-}"
 
   p6_return_void
 }
