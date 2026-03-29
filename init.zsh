@@ -37,11 +37,11 @@ p6df::modules::zoom::init() {
 ######################################################################
 #<
 #
-# Function: p6df::modules::zoom::external::brew()
+# Function: p6df::modules::zoom::external::brews()
 #
 #>
 ######################################################################
-p6df::modules::zoom::external::brew() {
+p6df::modules::zoom::external::brews() {
 
   p6df::core::homebrew::cli::brew::install --cask zoom
 
