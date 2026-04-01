@@ -7,6 +7,8 @@
 #
 #  Returns:
 #	str - path
+#
+#  Environment:	 HOME
 #>
 ######################################################################
 p6df::modules::zoom::oauth::token::file() {
@@ -21,12 +23,12 @@ p6df::modules::zoom::oauth::token::file() {
 #
 # Function: p6df::modules::zoom::oauth::login()
 #
+#  Environment:	 RANDOM ZOOM_CLIENT_ID
+#>
 #/ Synopsis
 #/    Start OAuth authorization code flow: open browser, capture code
 #/    via local redirect server, exchange for tokens, persist to disk.
 #/
-#  Environment: ZOOM_CLIENT_ID ZOOM_CLIENT_SECRET
-#>
 ######################################################################
 p6df::modules::zoom::oauth::login() {
 
@@ -64,15 +66,15 @@ p6df::modules::zoom::oauth::login() {
 #
 # Function: p6df::modules::zoom::oauth::code::exchange(code, redirect_uri)
 #
+#  Args:
+#	code - authorization code from redirect
+#	redirect_uri - must match app configuration
+#
+#  Environment:	 ZOOM_CLIENT_ID ZOOM_CLIENT_SECRET
+#>
 #/ Synopsis
 #/    Exchange authorization code for access + refresh tokens and persist.
 #/
-#  Args:
-#	code         - authorization code from redirect
-#	redirect_uri - must match app configuration
-#
-#  Environment: ZOOM_CLIENT_ID ZOOM_CLIENT_SECRET
-#>
 ######################################################################
 p6df::modules::zoom::oauth::code::exchange() {
   local code="$1"         # authorization code from redirect
@@ -94,12 +96,13 @@ p6df::modules::zoom::oauth::code::exchange() {
 #
 # Function: p6df::modules::zoom::oauth::tokens::save(response)
 #
+#  Args:
+#	response - JSON response from token endpoint
+#
+#>
 #/ Synopsis
 #/    Persist access_token, refresh_token, and expiry to disk.
 #/
-#  Args:
-#	response - JSON response from token endpoint
-#>
 ######################################################################
 p6df::modules::zoom::oauth::tokens::save() {
   local response="$1" # JSON response from token endpoint
@@ -128,11 +131,11 @@ p6df::modules::zoom::oauth::tokens::save() {
 #
 # Function: p6df::modules::zoom::oauth::token::refresh()
 #
+#  Environment:	 ZOOM_CLIENT_ID ZOOM_CLIENT_SECRET
+#>
 #/ Synopsis
 #/    Use stored refresh_token to obtain a new access token and persist.
 #/
-#  Environment: ZOOM_CLIENT_ID ZOOM_CLIENT_SECRET
-#>
 ######################################################################
 p6df::modules::zoom::oauth::token::refresh() {
 
@@ -156,14 +159,17 @@ p6df::modules::zoom::oauth::token::refresh() {
 ######################################################################
 #<
 #
-# Function: str str = p6df::modules::zoom::oauth::token()
+# Function: str token = p6df::modules::zoom::oauth::token()
 #
+#  Returns:
+#	str - token
+#
+#  Environment:	 EPOCHSECONDS
+#>
 #/ Synopsis
 #/    Return a valid access token, refreshing if expired.
 #/    Run p6df::modules::zoom::oauth::login first if no tokens exist.
 #/
-#  Environment: ZOOM_CLIENT_ID ZOOM_CLIENT_SECRET
-#>
 ######################################################################
 p6df::modules::zoom::oauth::token() {
 
@@ -199,16 +205,15 @@ p6df::modules::zoom::oauth::token() {
 #
 # Function: p6df::modules::zoom::api::call(method, path, [data=])
 #
+#  Args:
+#	method - HTTP method (GET POST PATCH PUT DELETE)
+#	path - API path e.g. /users/me/meetings
+#	OPTIONAL data - []
+#
+#>
 #/ Synopsis
 #/    Make an authenticated Zoom REST API v2 call
 #/
-#  Args:
-#	method - HTTP method (GET POST PATCH PUT DELETE)
-#	path   - API path e.g. /users/me/meetings
-#	OPTIONAL data - JSON body []
-#
-#  Environment: ZOOM_CLIENT_ID ZOOM_CLIENT_SECRET
-#>
 ######################################################################
 p6df::modules::zoom::api::call() {
   local method="$1" # HTTP method (GET POST PATCH PUT DELETE)
