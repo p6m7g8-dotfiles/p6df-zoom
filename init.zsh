@@ -62,5 +62,5 @@ p6df::modules::zoom::mcp() {
 ######################################################################
 p6df::modules::zoom::profile::mod() {
 
-  p6_return_words 'zoom' '$ZOOM_CLIENT_ID'
+  p6_return_words 'zoom' "$"
 }
