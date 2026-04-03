@@ -7,8 +7,6 @@
 #>
 ######################################################################
 p6df::modules::zoom::deps() {
-
-  # shellcheck disable=2034
   ModuleDeps=(
     p6m7g8-dotfiles/p6df-darwin
     p6m7g8-dotfiles/p6df-python
@@ -62,5 +60,5 @@ p6df::modules::zoom::mcp() {
 ######################################################################
 p6df::modules::zoom::profile::mod() {
 
-  p6_return_words 'zoom' "$"
+  p6_return_words 'zoom' '$ZOOM_CLIENT_ID'
 }
