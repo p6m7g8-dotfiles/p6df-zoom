@@ -50,10 +50,10 @@ p6df::modules::zoom::mcp() {
 ######################################################################
 #<
 #
-# Function: words zoom $ZOOM_CLIENT_ID = p6df::modules::zoom::profile::mod()
+# Function: words zoom = p6df::modules::zoom::profile::mod()
 #
 #  Returns:
-#	words - zoom $ZOOM_CLIENT_ID
+#	words - zoom
 #
 #  Environment:	 ZOOM_CLIENT_ID
 #>
